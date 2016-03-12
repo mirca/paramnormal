@@ -890,6 +890,27 @@ class rice(BaseDist_Mixin):
         return cls.param_template(R=b*sigma, loc=loc, sigma=sigma)
 
 
+class truncated_normal(BaseDist_Mixin):
+    dist = stats.truncnorm
+    param_template = namedtuple('params', ['lower', 'upper', 'mu', 'sigma'])
+    name = 'truncated normal'
+
+    @staticmethod
+    @utils.greco_deco
+    def _process_args(lower=None, upper=None, mu=None, sigma=None, fit=False):
+        a = (lower - mu) / sigma
+        b = (upper - mu) / sigma
+        loc_key, scale_key = utils._get_loc_scale_keys(fit=fit)
+        return {'a': a, 'b': b, loc_key: mu, scale_key: sigma}
+
+    @classmethod
+    def fit(cls, data, **guesses):
+        a, b, mu, sigma = cls._fit(data, **guesses)
+        lower = a * sigma + mu
+        upper = b * sigma + mu
+        return cls.param_template(lower=lower, upper=upper, mu=mu, sigma=sigma)
+
+
 __all__ = [
     'normal',
     'lognormal',
